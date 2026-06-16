@@ -622,7 +622,7 @@ input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(45,
           <select id="e-cat">
             <option>Nutrisi AB Mix</option><option>Benih / Bibit</option><option>Listrik</option>
             <option>Prive</option><option>Busa / Media Tanam</option><option>Tenaga Kerja</option>
-            <option>Packaging / Plastik</option><option>Perawatan Alat</option>
+            <option>Packaging / Plastik</option><option>Perawatan Alat</option><option>Tranportasi</option>
             <option>Obat - Obatan</option><option>Pajak</option><option>Lain-lain</option>
           </select>
         </div>
@@ -718,7 +718,7 @@ input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(45,
           <select id="r-cat">
             <option>Nutrisi AB Mix</option><option>Benih / Bibit</option><option>Listrik</option>
             <option>Prive</option><option>Busa / Media Tanam</option><option>Tenaga Kerja</option>
-            <option>Packaging / Plastik</option><option>Perawatan Alat</option>
+            <option>Packaging / Plastik</option><option>Perawatan Alat</option><option>Tranportasi</option>
             <option>Obat - Obatan</option><option>Pajak</option><option>Lain-lain</option>
           </select>
         </div>
@@ -1378,12 +1378,21 @@ window.switchKeuTab = function(tab) {
   else renderKeuangan();
 };
 
-// ── Render tab Per Bulan
+// ── Perbaikan Fungsi Pilih Bulan (Menggunakan Waktu Lokal, Bukan UTC)
 function populateBulanSelect() {
   const sel = document.getElementById('bulan-select');
   if(!sel) return;
   const months=[];
-  for(let i=11;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7));}
+  for(let i=11;i>=0;i--){
+    const d=new Date();
+    d.setDate(1); // Menghindari bug selisih hari di akhir bulan
+    d.setMonth(d.getMonth()-i);
+    
+    // Gunakan komponen waktu lokal untuk menghindari pergeseran zona waktu
+    const yy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    months.push(`${yy}-${mm}`);
+  }
   const cur=sel.value||today().slice(0,7);
   sel.innerHTML=months.map(m=>{
     const d=new Date(m+'-01');
@@ -1393,30 +1402,55 @@ function populateBulanSelect() {
   if(!sel.value) sel.value=cur;
 }
 
+// ── Perbaikan Fungsi Laporan Bulanan Secara Lengkap & Tertutup Sempurna
 window.renderKeuBulan = function() {
   populateBulanSelect();
   const sel=document.getElementById('bulan-select');
   if(!sel) return;
   const m=sel.value||today().slice(0,7);
-  const mSales=window.state.sales.filter(s=>s.date&&s.date.startsWith(m)&&s.status==='lunas');
-  const mExp=window.state.expenses.filter(e=>e.date&&e.date.startsWith(m));
-  const mIncome=mSales.reduce((a,s)=>a+s.total,0);
-  const mExpTotal=mExp.reduce((a,e)=>a+e.amount,0);
-  const mProfit=mIncome-mExpTotal;
-  document.getElementById('bln-income').textContent=fmtRp(mIncome);
-  document.getElementById('bln-income-sub').textContent=mSales.length+' transaksi lunas';
-  document.getElementById('bln-expense').textContent=fmtRp(mExpTotal);
-  document.getElementById('bln-expense-sub').textContent=mExp.length+' pos pengeluaran';
-  const bp=document.getElementById('bln-profit');bp.textContent=fmtRp(mProfit);bp.style.color=mProfit>=0?'var(--green)':'var(--danger)';
-  document.getElementById('bln-profit-note').textContent=mProfit>=0?'✅ Untung bulan ini':'⚠️ Merugi bulan ini';
-  // Tabel penjualan bulan ini
-  document.getElementById('bln-sale-table').innerHTML=mSales.length?mSales.map(s=>
-    `<tr><td class="mono" style="color:var(--green);font-size:11px;font-weight:700">${s.invoice||'—'}</td><td class="mono">${fmt(s.date)}</td><td>${s.buyer}</td><td style="font-weight:700;color:var(--green)">${fmtRp(s.total)}</td><td>${saleBadge(s)}</td></tr>`
-  ).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px">Tidak ada penjualan bulan ini.</td></tr>';
-  // Tabel pengeluaran bulan ini
-  document.getElementById('bln-expense-table').innerHTML=mExp.length?mExp.map(e=>
-    `<tr><td class="mono">${fmt(e.date)}</td><td><span class="badge b-gray">${e.cat}</span></td><td style="color:var(--danger);font-weight:700">${fmtRp(e.amount)}</td></tr>`
-  ).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px">Tidak ada pengeluaran bulan ini.</td></tr>';
+  
+  // Filter data penjualan dan pengeluaran berdasarkan string waktu lokal YYYY-MM
+  const mSales=window.state.sales.filter(s=>s.date && s.date.startsWith(m));
+  const mExpenses=window.state.expenses.filter(e=>e.date && e.date.startsWith(m));
+  
+  // Hitung total ringkasan bulanan
+  const income=mSales.filter(s=>s.status==='lunas').reduce((a,s)=>a+s.total,0);
+  const expense=mExpenses.reduce((a,e)=>a+e.amount,0);
+  const profit=income-expense;
+  
+  // Update UI Kartu Statistik Bulanan
+  document.getElementById('bln-income').textContent=fmtRp(income);
+  document.getElementById('bln-income-sub').textContent=mSales.filter(s=>s.status==='lunas').length+' transaksi lunas';
+  
+  document.getElementById('bln-expense').textContent=fmtRp(expense);
+  document.getElementById('bln-expense-sub').textContent=mExpenses.length+' transaksi';
+  
+  const blnProfitEl=document.getElementById('bln-profit');
+  blnProfitEl.textContent=fmtRp(profit);
+  blnProfitEl.style.color=profit>=0?'var(--green)':'var(--danger)';
+  document.getElementById('bln-profit-note').textContent=profit>=0?'✅ Laba Bulanan':'⚠️ Rugi Bulanan';
+  
+  // Render Tabel Penjualan Bulan Ini
+  const saleTable=document.getElementById('bln-sale-table');
+  saleTable.innerHTML=mSales.length?mSales.map(s=>`
+    <tr>
+      <td><strong>${s.invoice}</strong></td>
+      <td class="mono">${fmt(s.date)}</td>
+      <td>${s.buyer}</td>
+      <td class="mono" style="font-weight:700">${fmtRp(s.total)}</td>
+      <td>${saleBadge(s)}</td>
+    </tr>
+  `).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px">Tidak ada data penjualan di bulan ini.</td></tr>';
+  
+  // Render Tabel Pengeluaran Bulan Ini
+  const expenseTable=document.getElementById('bln-expense-table');
+  expenseTable.innerHTML=mExpenses.length?mExpenses.map(e=>`
+    <tr>
+      <td class="mono">${fmt(e.date)}</td>
+      <td><span class="badge b-gray">${e.cat}</span></td>
+      <td class="mono" style="color:var(--danger);font-weight:700">${fmtRp(e.amount)}</td>
+    </tr>
+  `).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px">Tidak ada data pengeluaran di bulan ini.</td></tr>';
 };
 
 // ── Saldo
