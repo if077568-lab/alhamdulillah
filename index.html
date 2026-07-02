@@ -525,7 +525,7 @@ input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(45,
   <div class="modal">
     <div class="modal-header"><div class="modal-title">🌱 Tambah Batch Tanam Baru</div><div class="modal-close" onclick="closeModal('modal-batch')">✕</div></div>
     <div class="modal-body">
-      <div class="info-box green">Sistem Instalasi · Semai 14 hari → Pindah Pendewasaan → Panen hari ke-50 · 150 gr/tanaman rata-rata</div>
+      <div class="info-box green">Sistem Instalasi · Semai 14 hari → Pindah Pendewasaan → Panen hari ke-60 · 150 gr/tanaman rata-rata</div>
       <div class="form-row fc2">
         <div class="form-group"><label>Tanggal Semai</label><input type="date" id="b-date" oninput="previewBatch()"></div>
         <div class="form-group"><label>Jumlah Bibit Semai</label>
@@ -1015,7 +1015,7 @@ window.previewBatch = function() {
   const d=document.getElementById('b-date').value, q=parseInt(document.getElementById('b-qty').value)||0;
   if(!d||!q){document.getElementById('batchPreview').style.display='none';return;}
   document.getElementById('p-pindah').textContent=fmt(addDays(d,14));
-  document.getElementById('p-panen').textContent=fmt(addDays(d,49));
+  document.getElementById('p-panen').textContent=fmt(addDays(d,60));
   document.getElementById('p-hasil').textContent=(q*0.15).toFixed(1)+' kg (estimasi)';
   document.getElementById('batchPreview').style.display='block';
 };
@@ -1030,7 +1030,7 @@ window.saveBatch = async function() {
     id:window.state.batchCounter, dateSemai:d, qty:q,
     note:document.getElementById('b-note').value,
     datePindah:addDays(d,14).toISOString().split('T')[0],
-    datePanen:addDays(d,49).toISOString().split('T')[0],
+    datePanen:addDays(d,60).toISOString().split('T')[0],
     qtyinstalasi:null, pindahNote:'',
     estKg:(q*0.15).toFixed(1), status:'semai',
     actualKg:'', harvestNote:'', actualHarvestDate:''
@@ -1237,7 +1237,7 @@ function renderBatch() {
   const active=[...window.state.batches.filter(b=>b.status!=='panen')]
     .sort((a,b)=>new Date(a.datePanen)-new Date(b.datePanen));
   document.getElementById('batchActiveTable').innerHTML=active.length?active.map(b=>{
-    const s=getBatchStatus(b),hari=Math.max(0,Math.floor((Date.now()-new Date(b.dateSemai))/86400000)),prog=Math.min(hari/49*100,100);
+    const s=getBatchStatus(b),hari=Math.max(0,Math.floor((Date.now()-new Date(b.dateSemai))/86400000)),prog=Math.min(hari/60*100,100);
     // Tombol aksi utama (pindah/panen)
     let aksiUtama='';
     if(s==='pindah-siap') aksiUtama=`<button class="btn btn-sm btn-warn" onclick="openPindahModal('${b._id}')">🪴 Pindah</button>`;
@@ -1251,7 +1251,7 @@ function renderBatch() {
       <td>${b.qtyinstalasi!=null?`<strong>${b.qtyinstalasi.toLocaleString('id-ID')}</strong>`:'<span style="color:var(--text-muted)">Belum pindah</span>'}</td>
       <td class="mono" style="color:var(--green);font-weight:700">${fmt(b.datePanen)}</td>
       <td>${b.estKg} kg</td>
-      <td><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Hari ${hari}/49</div><div class="prog-bar" style="width:90px"><div class="prog-fill" style="width:${prog}%"></div></div></td>
+      <td><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Hari ${hari}/60</div><div class="prog-bar" style="width:90px"><div class="prog-fill" style="width:${prog}%"></div></div></td>
       <td>${batchBadge(b)}</td>
       <td><div style="display:flex;gap:4px;flex-wrap:wrap">
         ${aksiUtama}
@@ -1301,8 +1301,8 @@ window.autoFillPanen = function() {
   // Pindah instalasi +14 hari
   const pindah=new Date(d); pindah.setDate(pindah.getDate()+14);
   document.getElementById('eb-datePindah').value=pindah.toISOString().split('T')[0];
-  // Est. panen +49 hari dari semai
-  const panen=new Date(d); panen.setDate(panen.getDate()+49);
+  // Est. panen +60 hari dari semai
+  const panen=new Date(d); panen.setDate(panen.getDate()+60);
   document.getElementById('eb-datePanen').value=panen.toISOString().split('T')[0];
 };
 
