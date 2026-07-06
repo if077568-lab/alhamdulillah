@@ -525,7 +525,7 @@ input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(45,
   <div class="modal">
     <div class="modal-header"><div class="modal-title">🌱 Tambah Batch Tanam Baru</div><div class="modal-close" onclick="closeModal('modal-batch')">✕</div></div>
     <div class="modal-body">
-      <div class="info-box green">Sistem Instalasi · Semai 14 hari → Pindah Pendewasaan → Panen hari ke-60 · 150 gr/tanaman rata-rata</div>
+      <div class="info-box green">Sistem Instalasi · Semai 16 hari → Pindah Pendewasaan → Panen hari ke-60 · 150 gr/tanaman rata-rata</div>
       <div class="form-row fc2">
         <div class="form-group"><label>Tanggal Semai</label><input type="date" id="b-date" oninput="previewBatch()"></div>
         <div class="form-group"><label>Jumlah Bibit Semai</label>
@@ -1014,7 +1014,7 @@ setInterval(tick,1000);tick();
 window.previewBatch = function() {
   const d=document.getElementById('b-date').value, q=parseInt(document.getElementById('b-qty').value)||0;
   if(!d||!q){document.getElementById('batchPreview').style.display='none';return;}
-  document.getElementById('p-pindah').textContent=fmt(addDays(d,14));
+  document.getElementById('p-pindah').textContent=fmt(addDays(d,16));
   document.getElementById('p-panen').textContent=fmt(addDays(d,60));
   document.getElementById('p-hasil').textContent=(q*0.15).toFixed(1)+' kg (estimasi)';
   document.getElementById('batchPreview').style.display='block';
@@ -1029,7 +1029,7 @@ window.saveBatch = async function() {
   const batch={
     id:window.state.batchCounter, dateSemai:d, qty:q,
     note:document.getElementById('b-note').value,
-    datePindah:addDays(d,14).toISOString().split('T')[0],
+    datePindah:addDays(d,16).toISOString().split('T')[0],
     datePanen:addDays(d,60).toISOString().split('T')[0],
     qtyinstalasi:null, pindahNote:'',
     estKg:(q*0.15).toFixed(1), status:'semai',
@@ -1298,8 +1298,8 @@ window.autoFillPanen = function() {
   const semai=document.getElementById('eb-dateSemai').value;
   if(!semai) return;
   const d=new Date(semai);
-  // Pindah instalasi +14 hari
-  const pindah=new Date(d); pindah.setDate(pindah.getDate()+14);
+  // Pindah instalasi +16 hari
+  const pindah=new Date(d); pindah.setDate(pindah.getDate()+16);
   document.getElementById('eb-datePindah').value=pindah.toISOString().split('T')[0];
   // Est. panen +60 hari dari semai
   const panen=new Date(d); panen.setDate(panen.getDate()+60);
